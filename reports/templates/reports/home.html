@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2 class="mb-4">Add New USG Report</h2>
+<div class="card shadow p-4 mb-5">
+  <form method="post">
+  {% csrf_token %}
+  <div class="row g-3">
+    <div class="col-md-6">{{ form.date.label_tag }} {{ form.date }}</div>
+    <div class="col-md-6">{{ form.patient_name.label_tag }} {{ form.patient_name }}</div>
+  </div>
+  <div class="row g-3 mt-2">
+    <div class="col-md-6">{{ form.type_of_usg.label_tag }} {{ form.type_of_usg }}</div>
+    <div class="col-md-6">{{ form.referred_by.label_tag }} {{ form.referred_by }}</div>
+  </div>
+  <div class="row g-3 mt-2">
+    <div class="col-md-6">{{ form.sonologist.label_tag }} {{ form.sonologist }}</div>
+    <div class="col-md-6">{{ form.total_ultra.label_tag }} {{ form.total_ultra }}</div>
+  </div>
+  <div class="row g-3 mt-2">
+    <div class="col-12">{{ form.notes.label_tag }} {{ form.notes }}</div>
+  </div>
+  <button type="submit" class="btn btn-primary mt-3">Save Report</button>
+</form>
+</div>
+
+<h3 class="mb-3">Recent Reports</h3>
+<div class="card shadow p-3">
+  <table class="table table-hover">
+    <thead class="table-primary">
+      <tr>
+        <th>ID</th>
+        <th>Date</th>
+        <th>Patient</th>
+        <th>Type</th>
+        <th>Referred By</th>
+        <th>Sonologist</th>
+        <th>Total Ultra</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for report in reports %}
+      <tr>
+        <td>{{ report.id }}</td>
+        <td>{{ report.date|date:"d M Y" }}</td>
+        <td>{{ report.patient_name }}</td>
+        <td>{{ report.type_of_usg }}</td>
+        <td>{{ report.referred_by }}</td>
+        <td>{{ report.sonologist }}</td>
+        <td>{{ report.total_ultra }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="7">No reports found</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
