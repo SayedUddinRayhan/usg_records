@@ -3,6 +3,7 @@
 
 <h2 class="mb-4">📋 Reports</h2>
 
+<!-- Filter Form -->
 <div class="card p-3 mb-4 shadow">
   <form method="get" class="row g-3">
     <div class="col-md-2">{{ form.start_date.label_tag }} {{ form.start_date }}</div>
@@ -18,55 +19,109 @@
   </form>
 </div>
 
+<!-- Reports Table -->
 <h3>Recent Reports</h3>
 <table class="table table-bordered">
   <thead class="table-light">
-  <tr>
-    <th>ID</th>
-    <th>Date</th>
-    <th>Exam Name</th>
-    <th>Exam Type</th>
-    <th>Referred By</th>
-    <th>Sonologist</th>
-    <th>Total Ultra</th>
-  </tr>
-</thead>
-<tbody>
-  {% for r in reports %}
-  <tr>
-    <td>{{ r.id_number }}</td>   <!-- ✅ show patient ID -->
-    <td>{{ r.date|date:"d M Y" }}</td>
-    <td>{{ r.exam_name }}</td>
-    <td>{{ r.exam_type }}</td>
-    <td>{{ r.referred_by }}</td>
-    <td>{{ r.sonologist }}</td>
-    <td>{{ r.total_ultra }}</td>
-  </tr>
-  {% empty %}
-  <tr><td colspan="7">No records found</td></tr>
-  {% endfor %}
-</tbody>
-
+    <tr>
+      <th>ID</th>
+      <th>Date</th>
+      <th>Exam Name</th>
+      <th>Exam Type</th>
+      <th>Referred By</th>
+      <th>Sonologist</th>
+      <th>Total Ultra</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for r in reports %}
+      <tr>
+        <td>{{ r.id_number }}</td>
+        <td>{{ r.date|date:"d M Y" }}</td>
+        <td>{{ r.exam_name }}</td>
+        <td>{{ r.exam_type }}</td>
+        <td>{{ r.referred_by }}</td>
+        <td>{{ r.sonologist }}</td>
+        <td>{{ r.total_ultra }}</td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="7">No records found</td></tr>
+    {% endfor %}
+  </tbody>
 </table>
 
-<h3>📅 Daily USG Count by Doctor</h3>
+<!-- Reports Pagination -->
+<nav aria-label="Reports pagination">
+  <ul class="pagination justify-content-center mt-3">
+    {% if reports.has_previous %}
+      <li class="page-item"><a class="page-link" href="?page=1&{{ request.GET.urlencode }}">« First</a></li>
+      <li class="page-item"><a class="page-link" href="?page={{ reports.previous_page_number }}&{{ request.GET.urlencode }}">‹ Prev</a></li>
+    {% else %}
+      <li class="page-item disabled"><span class="page-link">« First</span></li>
+      <li class="page-item disabled"><span class="page-link">‹ Prev</span></li>
+    {% endif %}
+
+    <li class="page-item active">
+      <span class="page-link">Page {{ reports.number }} of {{ reports.paginator.num_pages }}</span>
+    </li>
+
+    {% if reports.has_next %}
+      <li class="page-item"><a class="page-link" href="?page={{ reports.next_page_number }}&{{ request.GET.urlencode }}">Next ›</a></li>
+      <li class="page-item"><a class="page-link" href="?page={{ reports.paginator.num_pages }}&{{ request.GET.urlencode }}">Last »</a></li>
+    {% else %}
+      <li class="page-item disabled"><span class="page-link">Next ›</span></li>
+      <li class="page-item disabled"><span class="page-link">Last »</span></li>
+    {% endif %}
+  </ul>
+</nav>
+
+
+<!-- Daily Summary -->
+<h3>📅 Daily USG Count by Referred Doctor</h3>
 <table class="table table-bordered">
   <thead class="table-secondary">
     <tr><th>Date</th><th>Doctor</th><th>Total USG</th></tr>
   </thead>
   <tbody>
     {% for row in daily_by_doctor %}
-    <tr>
-      <td>{{ row.day|date:"d M Y" }}</td>
-      <td>{{ row.referred_by }}</td>
-      <td>{{ row.total_usg }}</td>
-    </tr>
+      <tr>
+        <td>{{ row.day|date:"d M Y" }}</td>
+        <td>{{ row.referred_by }}</td>
+        <td>{{ row.total_usg }}</td>
+      </tr>
     {% empty %}
-    <tr><td colspan="3">No data</td></tr>
+      <tr><td colspan="3">No data</td></tr>
     {% endfor %}
   </tbody>
 </table>
 
+<!-- Daily Pagination -->
+<nav aria-label="Daily pagination">
+  <ul class="pagination justify-content-center mt-3">
+    {% if daily_by_doctor.has_previous %}
+      <li class="page-item"><a class="page-link" href="?daily_page=1&{{ request.GET.urlencode }}">« First</a></li>
+      <li class="page-item"><a class="page-link" href="?daily_page={{ daily_by_doctor.previous_page_number }}&{{ request.GET.urlencode }}">‹ Prev</a></li>
+    {% else %}
+      <li class="page-item disabled"><span class="page-link">« First</span></li>
+      <li class="page-item disabled"><span class="page-link">‹ Prev</span></li>
+    {% endif %}
+
+    <li class="page-item active">
+      <span class="page-link">Page {{ daily_by_doctor.number }} of {{ daily_by_doctor.paginator.num_pages }}</span>
+    </li>
+
+    {% if daily_by_doctor.has_next %}
+      <li class="page-item"><a class="page-link" href="?daily_page={{ daily_by_doctor.next_page_number }}&{{ request.GET.urlencode }}">Next ›</a></li>
+      <li class="page-item"><a class="page-link" href="?daily_page={{ daily_by_doctor.paginator.num_pages }}&{{ request.GET.urlencode }}">Last »</a></li>
+    {% else %}
+      <li class="page-item disabled"><span class="page-link">Next ›</span></li>
+      <li class="page-item disabled"><span class="page-link">Last »</span></li>
+    {% endif %}
+  </ul>
+</nav>
+
+
+<!-- Monthly Summary -->
 <h3>📊 Monthly USG Count by Sonologist</h3>
 <table class="table table-bordered">
   <thead class="table-warning">
@@ -74,15 +129,40 @@
   </thead>
   <tbody>
     {% for row in monthly_by_sonologist %}
-    <tr>
-      <td>{{ row.month|date:"F Y" }}</td>
-      <td>{{ row.sonologist }}</td>
-      <td>{{ row.total_usg }}</td>
-    </tr>
+      <tr>
+        <td>{{ row.month|date:"F Y" }}</td>
+        <td>{{ row.sonologist }}</td>
+        <td>{{ row.total_usg }}</td>
+      </tr>
     {% empty %}
-    <tr><td colspan="3">No data</td></tr>
+      <tr><td colspan="3">No data</td></tr>
     {% endfor %}
   </tbody>
 </table>
+
+<!-- Monthly Pagination -->
+<nav aria-label="Monthly pagination">
+  <ul class="pagination justify-content-center mt-3">
+    {% if monthly_by_sonologist.has_previous %}
+      <li class="page-item"><a class="page-link" href="?monthly_page=1&{{ request.GET.urlencode }}">« First</a></li>
+      <li class="page-item"><a class="page-link" href="?monthly_page={{ monthly_by_sonologist.previous_page_number }}&{{ request.GET.urlencode }}">‹ Prev</a></li>
+    {% else %}
+      <li class="page-item disabled"><span class="page-link">« First</span></li>
+      <li class="page-item disabled"><span class="page-link">‹ Prev</span></li>
+    {% endif %}
+
+    <li class="page-item active">
+      <span class="page-link">Page {{ monthly_by_sonologist.number }} of {{ monthly_by_sonologist.paginator.num_pages }}</span>
+    </li>
+
+    {% if monthly_by_sonologist.has_next %}
+      <li class="page-item"><a class="page-link" href="?monthly_page={{ monthly_by_sonologist.next_page_number }}&{{ request.GET.urlencode }}">Next ›</a></li>
+      <li class="page-item"><a class="page-link" href="?monthly_page={{ monthly_by_sonologist.paginator.num_pages }}&{{ request.GET.urlencode }}">Last »</a></li>
+    {% else %}
+      <li class="page-item disabled"><span class="page-link">Next ›</span></li>
+      <li class="page-item disabled"><span class="page-link">Last »</span></li>
+    {% endif %}
+  </ul>
+</nav>
 
 {% endblock %}

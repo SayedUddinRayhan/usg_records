@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect
 from django.views import View
+from django.core.paginator import Paginator
 from django.db.models import Sum
 from django.db.models.functions import TruncDay, TruncMonth
 from django.http import HttpResponse
@@ -54,11 +55,20 @@ class ReportListView(View):
             if sonologist:
                 qs = qs.filter(sonologist=sonologist)
 
+        # ✅ Main Reports Pagination
+        paginator_reports = Paginator(qs, 10)
+        page_number_reports = request.GET.get("page_reports")
+        page_obj_reports = paginator_reports.get_page(page_number_reports)
+
         # Daily report by doctor
         daily_by_doctor = qs.annotate(day=TruncDay('date')) \
                             .values('day', 'referred_by') \
                             .annotate(total_usg=Sum('total_ultra')) \
                             .order_by('day')
+
+        paginator_daily = Paginator(daily_by_doctor, 15) 
+        page_number_daily = request.GET.get("page_daily")
+        page_obj_daily = paginator_daily.get_page(page_number_daily)
 
         # Monthly report by sonologist
         monthly_by_sonologist = qs.annotate(month=TruncMonth('date')) \
@@ -66,11 +76,15 @@ class ReportListView(View):
                                   .annotate(total_usg=Sum('total_ultra')) \
                                   .order_by('month')
 
+        paginator_monthly = Paginator(monthly_by_sonologist, 15)
+        page_number_monthly = request.GET.get("page_monthly")
+        page_obj_monthly = paginator_monthly.get_page(page_number_monthly)
+
         context = {
             "form": form,
-            "reports": qs[:50],
-            "daily_by_doctor": daily_by_doctor,
-            "monthly_by_sonologist": monthly_by_sonologist,
+            "reports": page_obj_reports,
+            "daily_by_doctor": page_obj_daily,
+            "monthly_by_sonologist": page_obj_monthly,
         }
         return render(request, self.template_name, context)
 
