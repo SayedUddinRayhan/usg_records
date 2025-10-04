@@ -7,18 +7,19 @@
   {% csrf_token %}
   <div class="row g-3">
     <div class="col-md-6">{{ form.date.label_tag }} {{ form.date }}</div>
-    <div class="col-md-6">{{ form.patient_name.label_tag }} {{ form.patient_name }}</div>
+    <div class="col-md-6">{{ form.id_number.label_tag }} {{ form.id_number }}</div>
   </div>
   <div class="row g-3 mt-2">
-    <div class="col-md-6">{{ form.type_of_usg.label_tag }} {{ form.type_of_usg }}</div>
+    <div class="col-md-6">{{ form.exam_name.label_tag }} {{ form.exam_name }}</div>
+    <div class="col-md-6">{{ form.exam_type.label_tag }} {{ form.exam_type }}</div>
+  </div>
+  <div class="row g-3 mt-2">
     <div class="col-md-6">{{ form.referred_by.label_tag }} {{ form.referred_by }}</div>
-  </div>
-  <div class="row g-3 mt-2">
     <div class="col-md-6">{{ form.sonologist.label_tag }} {{ form.sonologist }}</div>
-    <div class="col-md-6">{{ form.total_ultra.label_tag }} {{ form.total_ultra }}</div>
   </div>
   <div class="row g-3 mt-2">
-    <div class="col-12">{{ form.notes.label_tag }} {{ form.notes }}</div>
+    <div class="col-md-6">{{ form.total_ultra.label_tag }} {{ form.total_ultra }}</div>
+    <div class="col-md-6">{{ form.notes.label_tag }} {{ form.notes }}</div>
   </div>
   <button type="submit" class="btn btn-primary mt-3">Save Report</button>
 </form>
@@ -31,8 +32,9 @@
       <tr>
         <th>ID</th>
         <th>Date</th>
-        <th>Patient</th>
-        <th>Type</th>
+        <th>Patient ID</th>
+        <th>Exam Name</th>
+        <th>Exam Type</th>
         <th>Referred By</th>
         <th>Sonologist</th>
         <th>Total Ultra</th>
@@ -43,14 +45,15 @@
       <tr>
         <td>{{ report.id }}</td>
         <td>{{ report.date|date:"d M Y" }}</td>
-        <td>{{ report.patient_name }}</td>
-        <td>{{ report.type_of_usg }}</td>
+        <td>{{ report.id_number }}</td>
+        <td>{{ report.exam_name }}</td>
+        <td>{{ report.exam_type }}</td>
         <td>{{ report.referred_by }}</td>
         <td>{{ report.sonologist }}</td>
         <td>{{ report.total_ultra }}</td>
       </tr>
       {% empty %}
-      <tr><td colspan="7">No reports found</td></tr>
+      <tr><td colspan="8">No reports found</td></tr>
       {% endfor %}
     </tbody>
   </table>

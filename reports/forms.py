@@ -1,13 +1,14 @@
 from django import forms
-from reports.models import Report
 from django.utils import timezone
+from .models import Report
+
 
 class ReportForm(forms.ModelForm):
     date = forms.DateField(
-        initial=timezone.now().strftime('%d/%m/%Y'),  # display DD/MM/YYYY
-        input_formats=['%d/%m/%Y'],  # tell Django how to parse it
+        initial=timezone.now().strftime('%d/%m/%Y'),
+        input_formats=['%d/%m/%Y'],
         widget=forms.TextInput(attrs={
-            'type': 'text',  # must be text for custom format
+            'type': 'text',
             'class': 'form-control',
             'placeholder': 'DD/MM/YYYY'
         })
@@ -15,17 +16,27 @@ class ReportForm(forms.ModelForm):
 
     class Meta:
         model = Report
-        fields = ['date', 'patient_name', 'type_of_usg', 'referred_by', 'sonologist', 'total_ultra', 'notes']
+        fields = [
+            'date',
+            'id_number',
+            'exam_name',
+            'exam_type',
+            'referred_by',
+            'sonologist',
+            'total_ultra',
+            'notes'
+        ]
         widgets = {
-            'patient_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter patient name'}),
-            'type_of_usg': forms.Select(attrs={'class': 'form-select'}),
-            'referred_by': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Referred by'}),
-            'sonologist': forms.TextInput(attrs={'class': 'form-control'}),
-            'total_ultra': forms.NumberInput(attrs={'class': 'form-control', 'min': 1}),
+            'id_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Patient ID'}),
+            'exam_name': forms.Select(attrs={'class': 'form-select'}),
+            'exam_type': forms.Select(attrs={'class': 'form-select'}),
+            'referred_by': forms.Select(attrs={'class': 'form-select'}),
+            'sonologist': forms.Select(attrs={'class': 'form-select'}),
+            'total_ultra': forms.Select(attrs={'class': 'form-select'}),
             'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
         }
 
-        
+
 class ReportFilterForm(forms.Form):
     start_date = forms.DateField(
         required=False,
@@ -35,21 +46,26 @@ class ReportFilterForm(forms.Form):
         required=False,
         widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
     )
-    referred_by = forms.CharField(
+
+    referred_by = forms.ChoiceField(
         required=False,
-        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Referred By Doctor'})
+        choices=[('', 'All Doctors')] + Report.REFERRED_BY_CHOICES,
+        widget=forms.Select(attrs={'class': 'form-select'})
     )
-    sonologist = forms.CharField(
+
+    sonologist = forms.ChoiceField(
         required=False,
-        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Sonologist Name'})
+        choices=[('', 'All Sonologists')] + Report.SONOLOGIST_CHOICES,
+        widget=forms.Select(attrs={'class': 'form-select'})
     )
+
     group_by = forms.ChoiceField(
         required=False,
         choices=[
             ('', '--- Group By ---'),
-            ('daily', 'Daily'),
-            ('monthly', 'Monthly'),
-            ('doctor', 'Referred By Doctor'),
+            ('daily', 'Daily Report by Doctor'),
+            ('monthly_sonologist', 'Monthly Report by Sonologist'),
+            ('doctor', 'Raw Group by Doctor'),
         ],
         widget=forms.Select(attrs={'class': 'form-select'})
     )

@@ -1,109 +1,66 @@
+{% load static %}
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta charset="utf-8">
-<style>
-/* Fonts & body */
-body { font-family: DejaVu Sans, sans-serif; font-size: 12px; color: #333; margin: 0; padding: 0; }
-h2 { text-align: center; margin: 15px 0 20px; color: #0d6efd; }
-
-/* Table */
-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
-th, td { border: 1px solid #333; padding: 6px; text-align: left; font-size: 11px; }
-th { background-color: #0d6efd; color: white; }
-tr:nth-child(even) td { background-color: #f2f2f2; }
-
-/* Footer / summary */
-.summary { margin-bottom: 15px; font-weight: bold; }
-</style>
+    <meta charset="UTF-8">
+    <title>USG Report Export</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+        }
+        h2 {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+        }
+        th, td {
+            border: 1px solid #333;
+            padding: 6px;
+            text-align: center;
+            font-size: 11px;
+        }
+        th {
+            background: #f0f0f0;
+        }
+    </style>
 </head>
 <body>
 
-<h2>USG Reports</h2>
+    <h2>
+        🏥 Central Medical College Hospital <br>
+        USG Reports 
+        {% if group_by == "daily" %}(Daily Report by Doctor){% endif %}
+        {% if group_by == "monthly_sonologist" %}(Monthly Report by Sonologist){% endif %}
+        {% if group_by == "doctor" %}(Grouped by Doctor){% endif %}
+    </h2>
 
-<!-- Summary -->
-{% if reports %}
-<div class="summary">
-    Total Ultrasounds: {{ total_ultra }}
-    {% if group_by %} | Aggregated by: {{ group_by|capfirst }}{% endif %}
-</div>
-{% endif %}
+    <table>
+        <thead>
+            <tr>
+                {% for h in headers %}
+                    <th>{{ h }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in rows %}
+                <tr>
+                    {% for col in row %}
+                        <td>{{ col }}</td>
+                    {% endfor %}
+                </tr>
+            {% empty %}
+                <tr><td colspan="{{ headers|length }}">No data available</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
 
-<!-- Report Table -->
-<table>
-    <thead>
-        <tr>
-            {% if group_by == "daily" %}
-                <th>Date</th>
-                <th>Referred By</th>
-                <th>Total Ultra</th>
-            {% elif group_by == "monthly" %}
-                {% if reports.0.referred_by %}
-                    <th>Month</th>
-                    <th>Referred By</th>
-                    <th>Total Ultra</th>
-                {% elif reports.0.sonologist %}
-                    <th>Month</th>
-                    <th>Sonologist</th>
-                    <th>Total Ultra</th>
-                {% endif %}
-            {% elif group_by == "doctor" %}
-                <th>Referred By</th>
-                <th>Patient</th>
-                <th>Type</th>
-                <th>Sonologist</th>
-                <th>Total Ultra</th>
-            {% else %}
-                <th>ID</th>
-                <th>Date</th>
-                <th>Patient</th>
-                <th>Type</th>
-                <th>Referred By</th>
-                <th>Sonologist</th>
-                <th>Total Ultra</th>
-            {% endif %}
-        </tr>
-    </thead>
-    <tbody>
-        {% for r in reports %}
-        <tr>
-            {% if group_by == "daily" %}
-                <td>{{ r.date|date:"d-m-Y" }}</td>
-                <td>{{ r.referred_by }}</td>
-                <td>{{ r.total_ultra }}</td>
-            {% elif group_by == "monthly" %}
-                {% if r.referred_by %}
-                    <td>{{ r.month }}</td>
-                    <td>{{ r.referred_by }}</td>
-                    <td>{{ r.total_ultra }}</td>
-                {% elif r.sonologist %}
-                    <td>{{ r.month }}</td>
-                    <td>{{ r.sonologist }}</td>
-                    <td>{{ r.total_ultra }}</td>
-                {% endif %}
-            {% elif group_by == "doctor" %}
-                <td>{{ r.referred_by }}</td>
-                <td>{{ r.patient_name }}</td>
-                <td>{{ r.type_of_usg }}</td>
-                <td>{{ r.sonologist }}</td>
-                <td>{{ r.total_ultra }}</td>
-            {% else %}
-                <td>{{ r.id }}</td>
-                <td>{{ r.date|date:"d-m-Y" }}</td>
-                <td>{{ r.patient_name }}</td>
-                <td>{{ r.type_of_usg }}</td>
-                <td>{{ r.referred_by }}</td>
-                <td>{{ r.sonologist }}</td>
-                <td>{{ r.total_ultra }}</td>
-            {% endif %}
-        </tr>
-        {% empty %}
-        <tr>
-            <td colspan="7" style="text-align:center;">No reports found</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+    <p><strong>Total Records:</strong> {{ rows|length }}</p>
 
 </body>
 </html>

@@ -1,147 +1,88 @@
 {% extends 'base.html' %}
-{% load static %}
-
 {% block content %}
-<div class="container-fluid py-4">
 
-  <!-- Page Header -->
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="mb-0">USG Report List</h2>
+<h2 class="mb-4">📋 Reports</h2>
 
-    <!-- Export Buttons -->
-    <div class="d-flex gap-2">
-      <a href="{% url 'reports:export' 'pdf' %}?{% if request.GET %}{{ request.GET.urlencode }}{% endif %}" 
-         class="btn btn-danger btn-sm">
-         <i class="fas fa-file-pdf"></i> PDF
-      </a>
-      <a href="{% url 'reports:export' 'xlsx' %}?{% if request.GET %}{{ request.GET.urlencode }}{% endif %}" 
-         class="btn btn-success btn-sm">
-         <i class="fas fa-file-excel"></i> Excel
-      </a>
-      {% comment %} <button onclick="window.print()" class="btn btn-secondary btn-sm">
-         <i class="fas fa-print"></i> Print
-      </button> {% endcomment %}
+<div class="card p-3 mb-4 shadow">
+  <form method="get" class="row g-3">
+    <div class="col-md-2">{{ form.start_date.label_tag }} {{ form.start_date }}</div>
+    <div class="col-md-2">{{ form.end_date.label_tag }} {{ form.end_date }}</div>
+    <div class="col-md-3">{{ form.referred_by.label_tag }} {{ form.referred_by }}</div>
+    <div class="col-md-3">{{ form.sonologist.label_tag }} {{ form.sonologist }}</div>
+    <div class="col-md-2">{{ form.group_by.label_tag }} {{ form.group_by }}</div>
+    <div class="col-md-12">
+      <button type="submit" class="btn btn-primary mt-2">Filter</button>
+      <a href="{% url 'reports:export' 'xlsx' %}?{{ request.GET.urlencode }}" class="btn btn-success mt-2">⬇ Export Excel</a>
+      <a href="{% url 'reports:export' 'pdf' %}?{{ request.GET.urlencode }}" class="btn btn-danger mt-2">⬇ Export PDF</a>
     </div>
-  </div>
-
-  <!-- Filters Card -->
-  <div class="card shadow-sm mb-4 p-4">
-    <form method="get" class="row g-3 align-items-end">
-      <div class="col-md-3">
-        {{ form.start_date.label_tag }} {{ form.start_date }}
-      </div>
-      <div class="col-md-3">
-        {{ form.end_date.label_tag }} {{ form.end_date }}
-      </div>
-      <div class="col-md-3">
-        {{ form.referred_by.label_tag }} {{ form.referred_by }}
-      </div>
-      <div class="col-md-3">
-        {{ form.sonologist.label_tag }} {{ form.sonologist }}
-      </div>
-      <div class="col-md-3">
-        {{ form.group_by.label_tag }} {{ form.group_by }}
-      </div>
-      <div class="col-md-3 d-flex gap-2">
-        <button type="submit" class="btn btn-primary">Apply Filters</button>
-        <a href="{% url 'reports:report_list' %}" class="btn btn-secondary">Reset</a>
-      </div>
-    </form>
-  </div>
-
-  <!-- Total Ultrasound Summary -->
-  <div class="card shadow-sm p-3 mb-4">
-    <div class="d-flex justify-content-between align-items-center">
-      <div>
-        <strong>Total Ultrasounds:</strong> {{ total_ultra }}
-      </div>
-      <small class="text-muted">
-        {% if group_by %}
-          Aggregated by: {{ group_by|capfirst }}
-        {% else %}
-          Showing all reports
-        {% endif %}
-      </small>
-    </div>
-  </div>
-
-  <!-- Reports Table -->
-  <div class="card shadow-sm p-3">
-    <div class="table-responsive">
-      <table class="table table-striped table-hover align-middle">
-        <thead class="table-primary">
-          <tr>
-            {% if group_by == "daily" %}
-              <th>Date</th>
-              <th>Referred By</th>
-              <th>Total Ultra</th>
-            {% elif group_by == "monthly" and form.cleaned_data.referred_by %}
-              <th>Month</th>
-              <th>Referred By</th>
-              <th>Total Ultra</th>
-            {% elif group_by == "monthly" and form.cleaned_data.sonologist %}
-              <th>Month</th>
-              <th>Sonologist</th>
-              <th>Total Ultra</th>
-            {% else %}
-              <th>ID</th>
-              <th>Date</th>
-              <th>Patient</th>
-              <th>Type</th>
-              <th>Referred By</th>
-              <th>Sonologist</th>
-              <th>Total Ultra</th>
-            {% endif %}
-          </tr>
-        </thead>
-        <tbody>
-          {% for r in reports %}
-            <tr>
-              {% if group_by == "daily" %}
-                <td>{{ r.date|date:"d-m-Y" }}</td>
-                <td>{{ r.referred_by }}</td>
-                <td>{{ r.total_ultra }}</td>
-              {% elif group_by == "monthly" and form.cleaned_data.referred_by %}
-                <td>{{ r.month }}</td>
-                <td>{{ r.referred_by }}</td>
-                <td>{{ r.total_ultra }}</td>
-              {% elif group_by == "monthly" and form.cleaned_data.sonologist %}
-                <td>{{ r.month }}</td>
-                <td>{{ r.sonologist }}</td>
-                <td>{{ r.total_ultra }}</td>
-              {% else %}
-                <td>{{ r.id }}</td>
-                <td>{{ r.date|date:"d-m-Y" }}</td>
-                <td>{{ r.patient_name }}</td>
-                <td>{{ r.type_of_usg }}</td>
-                <td>{{ r.referred_by }}</td>
-                <td>{{ r.sonologist }}</td>
-                <td>{{ r.total_ultra }}</td>
-              {% endif %}
-            </tr>
-          {% empty %}
-            <tr>
-              <td colspan="7" class="text-center text-muted">No reports found.</td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </div>
-
+  </form>
 </div>
 
-<!-- Optional: Print Styles -->
-<style>
-  @media print {
-    .btn, .form-control, .form-select, .card.shadow-sm {
-      display: none !important;
-    }
-    body {
-      margin: 0;
-      font-size: 12px;
-    }
-  }
-</style>
+<h3>Recent Reports</h3>
+<table class="table table-bordered">
+  <thead class="table-light">
+  <tr>
+    <th>ID</th>
+    <th>Date</th>
+    <th>Exam Name</th>
+    <th>Exam Type</th>
+    <th>Referred By</th>
+    <th>Sonologist</th>
+    <th>Total Ultra</th>
+  </tr>
+</thead>
+<tbody>
+  {% for r in reports %}
+  <tr>
+    <td>{{ r.id_number }}</td>   <!-- ✅ show patient ID -->
+    <td>{{ r.date|date:"d M Y" }}</td>
+    <td>{{ r.exam_name }}</td>
+    <td>{{ r.exam_type }}</td>
+    <td>{{ r.referred_by }}</td>
+    <td>{{ r.sonologist }}</td>
+    <td>{{ r.total_ultra }}</td>
+  </tr>
+  {% empty %}
+  <tr><td colspan="7">No records found</td></tr>
+  {% endfor %}
+</tbody>
+
+</table>
+
+<h3>📅 Daily USG Count by Doctor</h3>
+<table class="table table-bordered">
+  <thead class="table-secondary">
+    <tr><th>Date</th><th>Doctor</th><th>Total USG</th></tr>
+  </thead>
+  <tbody>
+    {% for row in daily_by_doctor %}
+    <tr>
+      <td>{{ row.day|date:"d M Y" }}</td>
+      <td>{{ row.referred_by }}</td>
+      <td>{{ row.total_usg }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="3">No data</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<h3>📊 Monthly USG Count by Sonologist</h3>
+<table class="table table-bordered">
+  <thead class="table-warning">
+    <tr><th>Month</th><th>Sonologist</th><th>Total USG</th></tr>
+  </thead>
+  <tbody>
+    {% for row in monthly_by_sonologist %}
+    <tr>
+      <td>{{ row.month|date:"F Y" }}</td>
+      <td>{{ row.sonologist }}</td>
+      <td>{{ row.total_usg }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="3">No data</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
 
 {% endblock %}
