@@ -5,39 +5,32 @@
     <meta charset="UTF-8">
     <title>USG Report Export</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            font-size: 12px;
-        }
-        h2 {
-            text-align: center;
-            margin-bottom: 15px;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 15px;
-        }
-        th, td {
-            border: 1px solid #333;
-            padding: 6px;
-            text-align: center;
-            font-size: 11px;
-        }
-        th {
-            background: #f0f0f0;
-        }
+        body { font-family: Arial, sans-serif; font-size: 12px; }
+        h1, h2, h3 { text-align: center; margin: 0; padding: 2px; }
+        h1 { font-size: 16px; font-weight: bold; }
+        h2 { font-size: 14px; font-weight: normal; }
+        h3 { font-size: 13px; margin-bottom: 10px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+        th, td { border: 1px solid #333; padding: 6px; text-align: center; font-size: 11px; }
+        th { background: #f0f0f0; }
+        p { font-size: 11px; }
     </style>
 </head>
 <body>
 
-    <h2>
-        🏥 Central Medical College Hospital <br>
-        USG Reports 
-        {% if group_by == "daily" %}(Daily Report by Doctor){% endif %}
-        {% if group_by == "monthly_sonologist" %}(Monthly Report by Sonologist){% endif %}
-        {% if group_by == "doctor" %}(Grouped by Doctor){% endif %}
-    </h2>
+    <h1>Department of Radiology & Imaging</h1>
+    <h2>Ultrasonography Unit</h2>
+    <h3>
+        {% if group_by == "daily" %}
+            Daily Statement
+        {% elif group_by == "monthly_sonologist" %}
+            Monthly Statement
+        {% elif group_by == "doctor" %}
+            Grouped by Doctor
+        {% else %}
+            USG Report
+        {% endif %}
+    </h3>
 
     <table>
         <thead>
@@ -60,7 +53,10 @@
         </tbody>
     </table>
 
-    <p><strong>Total Records:</strong> {{ rows|length }}</p>
+    {% comment %} <p><strong>Total Records:</strong> {{ rows|length }}</p> {% endcomment %}
+    <p><strong>Grand Total USG:</strong> {{ grand_total_usg }}</p>
+
+
 
 </body>
 </html>

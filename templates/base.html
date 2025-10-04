@@ -6,6 +6,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}USG Report System{% endblock %}</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Flatpickr CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
   <style>
     body { font-family: Arial, sans-serif; }
     .sidebar { position: fixed; top:0; left:0; width:240px; height:100vh; background:#0d6efd; color:#fff; padding-top:70px; }
@@ -13,23 +16,26 @@
     .sidebar a:hover { background:#0b5ed7; }
     .content { margin-left:240px; padding:20px; margin-top:60px; }
     .navbar { z-index:1000; }
+    .sidebar .submenu { padding-left:20px; font-size:0.9em; }
   </style>
 </head>
+
+
+
 <body>
 
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top px-3">
   <a class="navbar-brand" href="#">🏥 Central Medical College Hospital</a>
   <div class="ms-auto">
     <a class="btn btn-outline-light me-2" href="{% url 'reports:home' %}">+ Add Report</a>
-    <a class="btn btn-outline-light" href="{% url 'reports:report_list' %}">📋 Reports</a>
   </div>
 </nav>
 
 <div class="sidebar">
   <a href="{% url 'reports:home' %}">➕ New Report</a>
-  <a href="{% url 'reports:report_list' %}">📊 View Reports</a>
-  {% comment %} <a href="#">📤 Export</a> {% endcomment %}
-  {% comment %} <a href="#">⚙ Settings</a> {% endcomment %}
+  <a href="{% url 'reports:report_list' %}">📋 All Reports</a>
+  <a href="{% url 'reports:daily_report' %}">📅 Daily Report</a>
+  <a href="{% url 'reports:monthly_report' %}">📊 Monthly Report</a>
 </div>
 
 <div class="content">
@@ -37,5 +43,14 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Flatpickr JS -->
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+  // Initialize flatpickr on all inputs with class 'date-picker'
+  flatpickr(".date-picker", {
+      dateFormat: "d/m/Y", // DD/MM/YYYY
+      allowInput: true
+  });
+</script>
 </body>
 </html>

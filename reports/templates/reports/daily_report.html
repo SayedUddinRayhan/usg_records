@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% load form_tags %}
+{% block content %}
+<h2 class="mb-4">📅 Daily USG Report by Doctor</h2>
+
+<!-- Daily Report Filter Form -->
+<div class="card p-4 mb-4 shadow-sm">
+  <h5 class="mb-3">🔎 Filter Daily USG Reports</h5>
+  <form method="get" class="row g-3 align-items-end">
+    
+    <div class="col-md-3">
+      <label class="form-label">{{ form.start_date.label }}</label>
+      {{ form.start_date|add_class:"form-control date-picker" }}
+    </div>
+
+    <div class="col-md-3">
+      <label class="form-label">{{ form.end_date.label }}</label>
+      {{ form.end_date|add_class:"form-control date-picker" }}
+    </div>
+
+    <div class="col-md-3">
+      <label class="form-label">{{ form.referred_by.label }}</label>
+      {{ form.referred_by|add_class:"form-control" }}
+    </div>
+
+    <div class="col-md-3 d-grid">
+      <button type="submit" class="btn btn-primary">Filter</button>
+    </div>
+
+  </form>
+</div>
+
+<!-- Export Buttons -->
+<div class="mb-3">
+  <a href="{% url 'reports:daily_export' 'xlsx' %}?{{ request.GET.urlencode }}" class="btn btn-success me-2">⬇ Excel</a>
+  <a href="{% url 'reports:daily_export' 'pdf' %}?{{ request.GET.urlencode }}" class="btn btn-danger">⬇ PDF</a>
+</div>
+
+<!-- Daily Reports Table -->
+<div class="card shadow-sm p-3">
+  <table class="table table-bordered table-hover">
+    <thead class="table-secondary">
+      <tr>
+        <th>Date</th>
+        <th>Referred By</th>
+        <th>Total USG</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for report in daily_reports %}
+        <tr>
+          <td>{{ report.day|date:"d M Y" }}</td>
+          <td>{{ report.referred_by }}</td>
+          <td>{{ report.total_usg }}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="3">No records found</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Pagination -->
+{% include "shared/pagination.html" with page_obj=daily_reports %}
+
+{% endblock %}
