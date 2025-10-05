@@ -21,6 +21,8 @@ class Report(models.Model):
         ('Thyroid/Neck', 'Thyroid/Neck'),
         ('Testes/ISR', 'Testes/ISR'),
         ('Swelling', 'Swelling'),
+        ('Breast', 'Breast'),
+        ('TVS', 'TVS'),
     ]
 
     exam_name = models.CharField(
