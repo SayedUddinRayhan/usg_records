@@ -1,6 +1,6 @@
+# reports/admin.py
 from django.contrib import admin
 from .models import Report
-
 
 @admin.register(Report)
 class ReportAdmin(admin.ModelAdmin):
@@ -24,7 +24,7 @@ class ReportAdmin(admin.ModelAdmin):
     search_fields = (
         'id_number',
         'patient_name',
-        'referred_by',
-        'sonologist',
+        'referred_by__name',
+        'sonologist__name',
         'notes'
     )

@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Exam Types{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3 class="fw-bold">Exam Types</h3>
+  <a href="{% url 'masterdata:examtype_create' %}" class="btn btn-primary btn-sm">+ Add Type</a>
+</div>
+
+<div class="card shadow-sm">
+  <div class="card-body p-0">
+    <table class="table table-hover mb-0">
+      <thead class="table-light">
+        <tr><th>Name</th><th class="text-end" style="width:150px;">Actions</th></tr>
+      </thead>
+      <tbody>
+        {% for item in items %}
+        <tr>
+          <td>{{ item.name }}</td>
+          <td class="text-end">
+            <a href="{% url 'masterdata:examtype_edit' item.pk %}" class="btn btn-sm btn-outline-secondary">Edit</a>
+            <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ item.pk }}">Delete</button>
+          </td>
+        </tr>
+
+        <div class="modal fade" id="deleteModal{{ item.pk }}" tabindex="-1">
+          <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+              <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+              </div>
+              <div class="modal-body">
+                Are you sure you want to delete <strong>{{ item.name }}</strong>?
+              </div>
+              <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <a href="{% url 'masterdata:examtype_delete' item.pk %}" class="btn btn-danger">Delete</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {% empty %}
+        <tr><td colspan="2" class="text-center py-3">No exam types found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

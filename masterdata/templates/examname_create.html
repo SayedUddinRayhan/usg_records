@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Add Exam Name{% endblock %}
+{% block content %}
+
+<h3 class="mb-3">Add Exam Name</h3>
+
+<div class="card shadow-sm p-3">
+  <form method="post">
+    {% csrf_token %}
+    <div class="mb-3">
+      {{ form.name.label_tag }}  
+      {{ form.name }}
+      {{ form.name.errors }}
+    </div>
+    <button class="btn btn-primary" type="submit">Save</button>
+    <a href="{% url 'masterdata:examname_list' %}" class="btn btn-secondary">Cancel</a>
+  </form>
+</div>
+
+{% endblock %}

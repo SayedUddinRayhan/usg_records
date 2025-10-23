@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Delete Sonologist{% endblock %}
+{% block content %}
+
+<div class="alert alert-danger mt-4">
+  <h4>Are you sure you want to delete "{{ object.name }}"?</h4>
+  <form method="post">
+    {% csrf_token %}
+    <button class="btn btn-danger" type="submit">Yes, Delete</button>
+    <a href="{% url 'masterdata:sonologist_list' %}" class="btn btn-secondary">Cancel</a>
+
+    </form> </div>
+
+{% endblock %}

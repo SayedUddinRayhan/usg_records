@@ -1,13 +1,13 @@
 {% extends 'base.html' %}
 {% load form_tags %}
 {% block content %}
-<div class="container py-4">
+{% comment %} <div class="container py-4"> {% endcomment %}
 
-  <h2 class="mb-4 fw-bold">📊 Monthly USG Report by Sonologist</h2>
+  <h2 class="mb-4 fw-bold">Monthly USG Report by Sonologist</h2>
 
   <!-- Monthly Report Filter Form -->
   <div class="card p-4 mb-4 shadow-sm">
-    <h5 class="mb-3">🔎 Filter Monthly USG Reports</h5>
+    <h5 class="mb-3">Filter Monthly USG Reports</h5>
     <form method="get" class="row g-3 align-items-end">
 
       <div class="col-md-3">
@@ -35,7 +35,7 @@
         {{ form.exam_name|add_class:"form-control" }}
       </div> {% endcomment %}
 
-      <div class="col-md-2 d-grid">
+      <div class="col-md-3 d-grid">
         <button type="submit" class="btn btn-primary">Filter</button>
       </div>
 
@@ -53,10 +53,9 @@
   </div>
 
   <!-- Monthly Reports Table -->
-  <div class="card shadow-sm border-0">
-    <div class="card-body p-0">
-      <table class="table table-striped table-hover mb-0">
-        <thead class="table-light">
+  <div class="card shadow-sm p-3">
+      <table class="table table-bordered table-hover">
+        <thead class="table-secondary">
           <tr>
             <th>Month</th>
             <th>Sonologist</th>
@@ -69,7 +68,7 @@
           {% for report in monthly_reports %}
             <tr>
               <td>{{ report.month|date:"F Y" }}</td>
-              <td>{{ report.sonologist }}</td>
+              <td>{{ report.sonologist_name }}</td>
               {% comment %} <td>{{ report.exam_type }}</td>
               <td>{{ report.exam_name }}</td> {% endcomment %}
               <td>{{ report.total_usg }}</td>
@@ -81,7 +80,7 @@
           {% endfor %}
         </tbody>
       </table>
-    </div>
+ 
   </div>
 
   <!-- Pagination -->
@@ -89,5 +88,5 @@
     {% include "shared/pagination.html" with page_obj=monthly_reports %}
   </div>
 
-</div>
+{% comment %} </div> {% endcomment %}
 {% endblock %}

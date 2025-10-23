@@ -6,6 +6,9 @@ from xhtml2pdf import pisa
 from django.template.loader import get_template
 
 def export_to_excel(rows, headers, filename="report"):
+    import openpyxl
+    from django.http import HttpResponse
+
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = filename
@@ -13,21 +16,30 @@ def export_to_excel(rows, headers, filename="report"):
     # Add headers
     ws.append(headers)
 
-    # Add data
+    # Add data (convert all model objects to string before writing)
     for row in rows:
-        ws.append(row)
+        safe_row = []
+        for cell in row:
+            # Convert any model instance or non-Excel type to string
+            if not isinstance(cell, (str, int, float, bool, type(None))):
+                safe_row.append(str(cell))
+            else:
+                safe_row.append(cell)
+        ws.append(safe_row)
 
     # Adjust column widths
     for col in ws.columns:
         max_length = max(len(str(cell.value)) if cell.value else 0 for cell in col)
         ws.column_dimensions[col[0].column_letter].width = max_length + 2
 
+    # Build response
     response = HttpResponse(
         content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
     response['Content-Disposition'] = f'attachment; filename="{filename}.xlsx"'
     wb.save(response)
     return response
+
 
 
 def export_to_pdf(rows, headers, filename, extra_context=None):

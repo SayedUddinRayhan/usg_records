@@ -2,6 +2,21 @@
 {% load form_tags %}
 {% block content %}
 <h2 class="mb-4">Add New USG Report</h2>
+
+<!-- Show messages-->
+{% if messages %}
+  {% for message in messages %}
+    <div class="alert 
+      {% if message.tags == 'success' %}alert-success
+      {% elif message.tags == 'error' %}alert-danger
+      {% else %}alert-info{% endif %}
+      alert-dismissible fade show" role="alert">
+      {{ message }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  {% endfor %}
+{% endif %}
+
 <div class="card shadow p-4 mb-5">
   <form method="post">
   {% csrf_token %}
@@ -58,4 +73,18 @@
     </tbody>
   </table>
 </div>
+
+<script>
+  // Hide alerts automatically after 3 seconds
+  setTimeout(() => {
+    const alerts = document.querySelectorAll('.alert');
+    alerts.forEach(alert => {
+      alert.classList.remove('show');
+      alert.classList.add('fade');
+      // Wait 500ms (animation time), then remove the element from DOM
+      setTimeout(() => alert.remove(), 500);
+    });
+  }, 3000);
+</script>
+
 {% endblock %}
