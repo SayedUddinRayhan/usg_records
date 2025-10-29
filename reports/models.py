@@ -16,15 +16,20 @@ class Report(models.Model):
         ('Normal', 'Normal'),
         ('Special', 'Special'),
     ]
-    # We keep exam_type as a simple CharField but you can also FK to ExamType if preferred
+   
     exam_type = models.CharField(max_length=50, choices=EXAM_TYPE_CHOICES, default='Normal')
 
+    def get_self_referrer():
+        from masterdata.models import Referrer
+        return Referrer.objects.get_or_create(name='Self')[0].pk 
+    
     referred_by = models.ForeignKey(
         'masterdata.Referrer',
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='reports'
+        related_name='reports',
+        default=get_self_referrer
     )
 
     sonologist = models.ForeignKey(

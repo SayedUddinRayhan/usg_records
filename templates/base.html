@@ -5,60 +5,323 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}USG Report System{% endblock %}</title>
+
+  <!-- Bootstrap 5 -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
   <!-- Flatpickr CSS -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 
+  <!-- Google Material Icons -->
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+
   <style>
-    body { font-family: Arial, sans-serif; }
-    .sidebar { position: fixed; top:0; left:0; width:240px; height:100vh; background:#0d6efd; color:#fff; padding-top:70px; }
-    .sidebar a { display:block; color:#fff; padding:12px 20px; text-decoration:none; }
-    .sidebar a:hover { background:#0b5ed7; }
-    .content { margin-left:240px; padding:20px; margin-top:60px; }
-    .navbar { z-index:1000; }
-    .sidebar .submenu { padding-left:20px; font-size:0.9em; }
+    :root {
+      --sidebar-bg: #0d6efd;
+      --sidebar-text: #fff;
+      --content-bg: #f8f9fa;
+      --text-color: #212529;
+      --navbar-bg: #0d6efd;
+      --hover-bg: rgba(255, 255, 255, 0.15);
+      --active-border: #ffc107;
+    }
 
-    .sidebar .nav-link {
-      padding: 8px 20px;
+    body.dark-mode {
+      --sidebar-bg: #1e1e1e;
+      --sidebar-text: #e0e0e0;
+      --content-bg: #121212;
+      --text-color: #f1f1f1;
+      --navbar-bg: #2c2c2c;
+      --hover-bg: rgba(255, 255, 255, 0.1);
+      --active-border: #0d6efd;
+    }
+
+    body {
+      font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+      background-color: var(--content-bg);
+      color: var(--text-color);
+      transition: background 0.3s ease, color 0.3s ease;
+      overflow-x: hidden;
+    }
+
+    /* Navbar */
+    .navbar {
+      z-index: 1000;
+      background-color: var(--navbar-bg) !important;
+      transition: background 0.3s ease;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .navbar-brand {
+      display: flex;
+      align-items: center;
+      font-weight: 600;
+      gap: 8px;
+      color: #fff !important;
+    }
+
+    .navbar-brand .material-icons-outlined {
+      font-size: 26px;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 250px;
+      height: 100vh;
+      background: var(--sidebar-bg);
+      color: var(--sidebar-text);
+      padding-top: 70px;
+      transition: width 0.3s ease, background 0.3s ease;
+      box-shadow: 2px 0 6px rgba(0,0,0,0.1);
+      overflow-y: auto;
+    }
+
+    .sidebar.collapsed {
+      width: 70px;
+    }
+
+    .sidebar a {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--sidebar-text);
+      padding: 12px 20px;
+      text-decoration: none;
+      border-left: 3px solid transparent;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+
+    .sidebar a:hover {
+      background: var(--hover-bg);
+      transform: translateX(3px);
+    }
+
+    .sidebar a.active {
+      background: var(--hover-bg);
+      border-left-color: var(--active-border);
+      font-weight: 500;
+    }
+
+    .sidebar .material-icons-outlined {
+      font-size: 22px;
+      min-width: 22px;
+    }
+
+    .sidebar h6 {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      opacity: 0.8;
+      margin-top: 15px;
+      margin-bottom: 5px;
+      padding-left: 20px;
+      transition: opacity 0.3s ease;
+    }
+
+    .sidebar.collapsed a span.text {
+      display: none;
+    }
+
+    .sidebar.collapsed h6 {
+      display: none;
+    }
+
+    /* Tooltip styling */
+    .sidebar a[title]::after {
+      content: attr(title);
+      position: absolute;
+      left: 80px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(0, 0, 0, 0.8);
       color: #fff;
-      }
-    .sidebar .nav-link:hover {
-      background: rgba(255, 255, 255, 0.2);
-      }
+      padding: 4px 10px;
+      border-radius: 5px;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      font-size: 13px;
+    }
 
+    .sidebar.collapsed a:hover::after {
+      opacity: 1;
+      transform: translateY(-50%) translateX(5px);
+    }
+
+    /* Content */
+    .content {
+      margin-left: 250px;
+      padding: 30px;
+      margin-top: 70px;
+      transition: margin-left 0.3s ease;
+    }
+
+    .collapsed ~ .content {
+      margin-left: 70px;
+    }
+
+    /* Toggle Button */
+    .toggle-btn {
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 24px;
+      cursor: pointer;
+      transition: color 0.3s ease, transform 0.2s ease;
+    }
+
+    .toggle-btn:hover {
+      transform: scale(1.1);
+      color: #ffc107;
+    }
+
+    /* Dark mode toggle */
+    #themeToggle {
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 22px;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    #themeToggle:hover {
+      transform: scale(1.1);
+    }
+
+    /* Scrollbar */
+    .sidebar::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .sidebar::-webkit-scrollbar-thumb {
+      background-color: rgba(255, 255, 255, 0.3);
+      border-radius: 3px;
+    }
   </style>
 </head>
 <body>
 
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top px-3">
-  <a class="navbar-brand" href="#">🏥 Central Medical College Hospital</a>
-  <div class="ms-auto">
-    <a class="btn btn-outline-light me-2" href="{% url 'reports:home' %}">+ Add Report</a>
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark fixed-top px-3">
+  <button class="toggle-btn me-3" id="toggleSidebar">
+    <span class="material-icons-outlined">menu</span>
+  </button>
+  <a class="navbar-brand" href="/">
+    <span class="material-icons-outlined">local_hospital</span>
+    <span>Central Medical College Hospital</span>
+  </a>
+  <div class="ms-auto d-flex align-items-center gap-2">
+    <button id="themeToggle" title="Toggle Dark/Light Mode">
+      <span class="material-icons-outlined" id="themeIcon">dark_mode</span>
+    </button>
+    <a class="btn btn-outline-light d-flex align-items-center" href="{% url 'reports:home' %}">
+      <span class="material-icons-outlined me-1">note_add</span> Add Report
+    </a>
   </div>
 </nav>
 
-<div class="sidebar">
-  <a href="{% url 'reports:home' %}">➕ New Report</a>
-  <a href="{% url 'reports:report_list' %}">📋 All Reports</a>
-  <a href="{% url 'reports:daily_report' %}">📅 Daily Report</a>
-  <a href="{% url 'reports:monthly_report' %}">📊 Monthly Report</a>
-  <hr style="border-color: rgba(255,255,255,0.2);">
-  {% include 'settings_nav.html' %}
+<!-- Sidebar -->
+<div class="sidebar" id="sidebar">
+  <a href="{% url 'reports:home' %}" 
+     class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}"
+     title="New Report">
+    <span class="material-icons-outlined">description</span>
+    <span class="text">New Report</span>
+  </a>
+  <a href="{% url 'reports:report_list' %}" 
+     class="nav-link {% if request.resolver_match.url_name == 'report_list' %}active{% endif %}"
+     title="All Reports">
+    <span class="material-icons-outlined">list_alt</span>
+    <span class="text">All Reports</span>
+  </a>
+  <a href="{% url 'reports:daily_report' %}" 
+     class="nav-link {% if request.resolver_match.url_name == 'daily_report' %}active{% endif %}"
+     title="Daily Report">
+    <span class="material-icons-outlined">today</span>
+    <span class="text">Daily Report</span>
+  </a>
+  <a href="{% url 'reports:monthly_report' %}" 
+     class="nav-link {% if request.resolver_match.url_name == 'monthly_report' %}active{% endif %}"
+     title="Monthly Report">
+    <span class="material-icons-outlined">calendar_month</span>
+    <span class="text">Monthly Report</span>
+  </a>
+
+  <hr>
+
+  <!-- Settings -->
+  <h6>⚙ Settings</h6>
+  <a href="{% url 'masterdata:examname_list' %}" 
+     class="nav-link {% if request.resolver_match.url_name == 'examname_list' %}active{% endif %}"
+     title="Exam Names">
+    <span class="material-icons-outlined">fact_check</span>
+    <span class="text">Exam Names</span>
+  </a>
+  <a href="{% url 'masterdata:examtype_list' %}" 
+     class="nav-link {% if request.resolver_match.url_name == 'examtype_list' %}active{% endif %}"
+     title="Exam Types">
+    <span class="material-icons-outlined">category</span>
+    <span class="text">Exam Types</span>
+  </a>
+  <a href="{% url 'masterdata:referrer_list' %}" 
+     class="nav-link {% if request.resolver_match.url_name == 'referrer_list' %}active{% endif %}"
+     title="Referrers (Doctors)">
+    <span class="material-icons-outlined">groups</span>
+    <span class="text">Referrers (Doctors)</span>
+  </a>
+  <a href="{% url 'masterdata:sonologist_list' %}" 
+     class="nav-link {% if request.resolver_match.url_name == 'sonologist_list' %}active{% endif %}"
+     title="Sonologists">
+    <span class="material-icons-outlined">person_search</span>
+    <span class="text">Sonologists</span>
+  </a>
 </div>
 
-<div class="content">
+<!-- Main Content -->
+<div class="content" id="content">
   {% block content %}{% endblock %}
 </div>
 
+<!-- JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<!-- Flatpickr JS -->
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script>
-  // Initialize flatpickr on all inputs with class 'date-picker'
+  // Flatpickr initialization
   flatpickr(".date-picker", {
-      dateFormat: "d/m/Y", // DD/MM/YYYY
+      dateFormat: "d/m/Y",
       allowInput: true
   });
+
+  // Sidebar toggle
+  const sidebar = document.getElementById('sidebar');
+  const content = document.getElementById('content');
+  document.getElementById('toggleSidebar').addEventListener('click', () => {
+    sidebar.classList.toggle('collapsed');
+    content.classList.toggle('collapsed');
+  });
+
+  // Dark/Light mode toggle
+  const themeToggle = document.getElementById('themeToggle');
+  const themeIcon = document.getElementById('themeIcon');
+  const currentTheme = localStorage.getItem('theme');
+
+  if (currentTheme === 'dark') {
+    document.body.classList.add('dark-mode');
+    themeIcon.textContent = 'light_mode';
+  }
+
+  themeToggle.addEventListener('click', () => {
+    document.body.classList.toggle('dark-mode');
+    const isDark = document.body.classList.contains('dark-mode');
+    themeIcon.textContent = isDark ? 'light_mode' : 'dark_mode';
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+  });
 </script>
+
 </body>
 </html>
