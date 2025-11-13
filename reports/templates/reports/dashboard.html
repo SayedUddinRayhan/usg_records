@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard | USG Report System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <h3 class="mb-4 fw-bold">Dashboard Overview</h3>
+
+  <!-- Summary Cards Row -->
+  <div class="row g-3 mb-4">
+    <!-- Total Ultra Today -->
+    <div class="col-md-3 col-sm-6">
+      <div class="card shadow-sm border-0 rounded-4 text-center p-3 bg-info text-white">
+        <h5 id="ultra-today" class="fw-bold mb-0">0</h5>
+        <p class="mb-0">Ultra Today</p>
+      </div>
+    </div>
+
+    <!-- Total Ultra All -->
+    <div class="col-md-3 col-sm-6">
+      <div class="card shadow-sm border-0 rounded-4 text-center p-3 bg-warning text-white">
+        <h5 id="ultra-all" class="fw-bold mb-0">0</h5>
+        <p class="mb-0">Total Ultra</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Exam Types Card -->
+  <div class="card shadow-sm border-0 rounded-4 p-3 mb-4">
+    <h6 class="fw-semibold mb-3">Today's Reports by Exam Type</h6>
+    <div class="row g-3" id="exam-type-cards">
+      <div class="col-12 text-center text-muted">Loading...</div>
+    </div>
+  </div>
+
+  <!-- Sonologists Card -->
+  <div class="card shadow-sm border-0 rounded-4 p-3 mb-4">
+    <h6 class="fw-semibold mb-3">Today's Reports by Sonologist</h6>
+    <div class="row g-3" id="sonologist-cards">
+      <div class="col-12 text-center text-muted">Loading...</div>
+    </div>
+  </div>
+
+  <p class="text-muted small mt-2">Last updated: <span id="last-updated">now</span></p>
+</div>
+
+<script>
+const colors = ['primary','success','info','warning','danger','secondary','dark'];
+
+function getRandomColor() {
+    return colors[Math.floor(Math.random() * colors.length)];
+}
+
+async function refreshDashboard() {
+    const response = await fetch("{% url 'reports:dashboard-data' %}");
+    const data = await response.json();
+
+    // Update Ultra summary counts
+    document.getElementById('ultra-today').textContent = data.total_ultra_today;
+    document.getElementById('ultra-all').textContent = data.total_ultra_all;
+
+    // Update Exam Type cards
+    const examContainer = document.getElementById('exam-type-cards');
+    if(data.category_summary.length) {
+        examContainer.innerHTML = data.category_summary.map(c => {
+            const color = getRandomColor();
+            return `
+            <div class="col-md-3 col-sm-6">
+              <div class="card shadow-sm border-0 rounded-4 text-center p-3 bg-${color} text-white">
+                <h6 class="fw-semibold mb-1">${c.exam_type}</h6>
+                <h4 class="fw-bold mb-0">${c.ultra_sum}</h4>
+              </div>
+            </div>`;
+        }).join('');
+    } else {
+        examContainer.innerHTML = `<div class="col-12 text-center text-muted">No reports today.</div>`;
+    }
+
+    // Update Sonologist cards
+    const sonContainer = document.getElementById('sonologist-cards');
+    if(data.sonologist_summary.length) {
+        sonContainer.innerHTML = data.sonologist_summary.map(s => {
+            const color = getRandomColor();
+            return `
+            <div class="col-md-3 col-sm-6">
+              <div class="card shadow-sm border-0 rounded-4 text-center p-3 bg-${color} text-white">
+                <h6 class="fw-semibold mb-1">${s.sonologist__name || '—'}</h6>
+                <h4 class="fw-bold mb-0">${s.ultra_sum}</h4>
+              </div>
+            </div>`;
+        }).join('');
+    } else {
+        sonContainer.innerHTML = `<div class="col-12 text-center text-muted">No reports today.</div>`;
+    }
+
+    // Update last refresh time
+    document.getElementById('last-updated').textContent = data.timestamp;
+}
+
+// Initial load + refresh every 30 seconds
+refreshDashboard();
+setInterval(refreshDashboard, 30000);
+</script>
+{% endblock %}

@@ -227,6 +227,14 @@
 
 <!-- Sidebar -->
 <div class="sidebar" id="sidebar">
+
+  <a href="{% url 'reports:dashboard' %}" 
+   class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}"
+   title="Dashboard">
+  <span class="material-icons-outlined">dashboard</span>
+  <span class="text">Dashboard</span>
+</a>
+
   <a href="{% url 'reports:home' %}" 
      class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}"
      title="New Report">

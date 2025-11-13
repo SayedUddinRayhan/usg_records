@@ -1,7 +1,8 @@
 from django.shortcuts import render, redirect
 from django.views import View
+from django.views.generic import TemplateView
 from django.core.paginator import Paginator
-from django.db.models import Sum
+from django.db.models import Sum, Count
 from django.db.models.functions import TruncDay, TruncMonth
 from django.http import HttpResponse
 from django.template.loader import get_template
@@ -13,6 +14,9 @@ from .models import Report
 from .forms import ReportForm, ReportFilterForm, DailyReportFilterForm, MonthlyReportFilterForm
 from .utils import export_to_excel, export_to_pdf
 from django.db.models import Sum, F
+from datetime import date
+from django.utils.timezone import localtime, now
+from django.http import JsonResponse
 
 # Home / Add New Report
 class HomeView(View):
@@ -34,6 +38,52 @@ class HomeView(View):
             messages.error(request, "Please correct the errors below.")
         reports = Report.objects.order_by('-date')[:10]
         return render(request, self.template_name, {"form": form, "reports": reports})
+
+# Dashboard page (HTML)
+class DashboardPageView(TemplateView):
+    template_name = 'reports/dashboard.html'
+
+
+class DashboardDataView(View):
+    """Return live dashboard summary data as JSON (for AJAX refresh)."""
+
+    def get(self, request, *args, **kwargs):
+        today = localtime(now()).date()
+
+        total_ultra_today = Report.objects.filter(date=today).aggregate(total=Sum('total_ultra'))['total'] or 0
+        total_ultra_all = Report.objects.aggregate(total=Sum('total_ultra'))['total'] or 0
+
+        # Exam type summary
+        category_summary = list(
+            Report.objects
+            .filter(date=today)
+            .values('exam_type')
+            .annotate(
+                report_count=Count('id'),
+                ultra_sum=Sum('total_ultra')
+            )
+            .order_by('-report_count')
+        )
+
+        # Sonologist summary
+        sonologist_summary = list(
+            Report.objects
+            .filter(date=today)
+            .values('sonologist__name')
+            .annotate(
+                report_count=Count('id'),
+                ultra_sum=Sum('total_ultra')
+            )
+            .order_by('-report_count')
+        )
+
+        return JsonResponse({
+            'total_ultra_today': total_ultra_today,
+            'total_ultra_all': total_ultra_all,
+            'category_summary': category_summary,
+            'sonologist_summary': sonologist_summary,
+            'timestamp': localtime(now()).strftime("%H:%M:%S"),
+        })
 
 
 # Report List
