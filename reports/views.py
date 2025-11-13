@@ -11,7 +11,7 @@ import openpyxl
 from xhtml2pdf import pisa
 from django.contrib import messages
 from .models import Report
-from .forms import ReportForm, ReportFilterForm, DailyReportFilterForm, MonthlyReportFilterForm
+from .forms import ReportForm, ReportFilterForm, DailyReportFilterForm, MonthlyReportFilterForm, ExamTypeReportFilterForm
 from .utils import export_to_excel, export_to_pdf
 from django.db.models import Sum, F
 from datetime import date
@@ -157,6 +157,49 @@ class DailyReportView(View):
             "form": form,
             "daily_reports": page_obj
         })
+
+
+class ExamTypeReportView(View):
+    """Show report of total ultras per sonologist per exam type with filtering and pagination."""
+
+    def get(self, request):
+        form = ExamTypeReportFilterForm(request.GET or None)
+
+        reports = Report.objects.select_related('sonologist').all()
+
+        if form.is_valid():
+            start_date = form.cleaned_data.get('start_date')
+            end_date = form.cleaned_data.get('end_date')
+            sonologist = form.cleaned_data.get('sonologist')
+            exam_type = form.cleaned_data.get('exam_type')
+
+            if start_date:
+                reports = reports.filter(date__gte=start_date)
+            if end_date:
+                reports = reports.filter(date__lte=end_date)
+            if sonologist:
+                reports = reports.filter(sonologist=sonologist)
+            if exam_type:
+                reports = reports.filter(exam_type=exam_type)
+
+        # Aggregate data: total ultras grouped by sonologist & exam_type
+        aggregated_reports = reports.values(
+            'sonologist__name', 'exam_type__name'
+        ).annotate(
+            total_ultras=Sum('total_ultra')
+        ).order_by('sonologist__name', 'exam_type__name')
+
+        # Pagination
+        paginator = Paginator(aggregated_reports, 20)  # 20 rows per page
+        page_number = request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+
+        context = {
+            'form': form,
+            'exam_type_reports': page_obj,  # template expects this
+        }
+
+        return render(request, 'reports/exam_type_report.html', context)
 
 
 # Monthly Report (Grouped by Sonologist)
@@ -306,6 +349,56 @@ class DailyReportExportView(View):
         elif fmt.lower() == 'pdf':
             return export_to_pdf(rows, headers, "daily_report", extra_context={
                 'grand_total_usg': grand_total_usg, 'group_by': 'daily'
+            })
+        return HttpResponse("Invalid format", status=400)
+
+class ExamTypeReportExportView(View):
+    """Export exam-type-wise USG report by sonologist (Excel / PDF)."""
+
+    def get(self, request, fmt):
+        form = ExamTypeReportFilterForm(request.GET or None)
+        qs = Report.objects.all()
+
+        if form.is_valid():
+            sd = form.cleaned_data.get("start_date")
+            ed = form.cleaned_data.get("end_date")
+            sonologist = form.cleaned_data.get("sonologist")
+            exam_type = form.cleaned_data.get("exam_type")
+
+            if sd:
+                qs = qs.filter(date__gte=sd)
+            if ed:
+                qs = qs.filter(date__lte=ed)
+            if sonologist:
+                qs = qs.filter(sonologist=sonologist)
+            if exam_type:
+                qs = qs.filter(exam_type=exam_type)
+
+        # Prepare data grouped by exam_type and sonologist
+        report_data = (
+            qs.values('exam_type', 'sonologist')
+              .annotate(
+                  sonologist_name=F('sonologist__name'),
+                  exam_type_name=F('exam_type__name'),
+                  total_usg=Sum('total_ultra')
+              )
+              .order_by('exam_type', 'sonologist')
+        )
+
+        headers = ['Exam Type', 'Sonologist', 'Total USG']
+        rows = [
+            [r['exam_type_name'], r['sonologist_name'], r['total_usg']]
+            for r in report_data
+        ]
+
+        grand_total_usg = sum(r['total_usg'] for r in report_data)
+
+        if fmt.lower() == 'xlsx':
+            return export_to_excel(rows, headers, "exam_type_report")
+        elif fmt.lower() == 'pdf':
+            return export_to_pdf(rows, headers, "exam_type_report", extra_context={
+                'grand_total_usg': grand_total_usg,
+                'group_by': 'exam_type_sonologist'
             })
         return HttpResponse("Invalid format", status=400)
 

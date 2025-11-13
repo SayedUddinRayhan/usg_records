@@ -253,6 +253,14 @@
     <span class="material-icons-outlined">today</span>
     <span class="text">Daily Report</span>
   </a>
+
+  <a href="{% url 'reports:exam_type_report' %}" 
+   class="nav-link {% if request.resolver_match.url_name == 'exam_type_report' %}active{% endif %}"
+   title="Exam Type Report">
+  <span class="material-icons-outlined">assessment</span>
+  <span class="text">Exam Type Report</span>
+</a>
+
   <a href="{% url 'reports:monthly_report' %}" 
      class="nav-link {% if request.resolver_match.url_name == 'monthly_report' %}active{% endif %}"
      title="Monthly Report">

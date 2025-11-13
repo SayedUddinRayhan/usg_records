@@ -9,6 +9,8 @@ from .views import (
     ExportView,
     DailyReportExportView,
     MonthlyReportExportView,
+    ExamTypeReportView,
+    ExamTypeReportExportView,
 )
 
 app_name = "reports"
@@ -23,5 +25,7 @@ urlpatterns = [
     path('reports/monthly/', MonthlyReportView.as_view(), name='monthly_report'),
     path('reports/monthly/export/<str:fmt>/', MonthlyReportExportView.as_view(), name='monthly_export'),
     path('export/<str:fmt>/', ExportView.as_view(), name='export'),
+    path('reports/exam-type/', ExamTypeReportView.as_view(), name='exam_type_report'),
+    path('reports/exam-type/export/<str:fmt>/', ExamTypeReportExportView.as_view(), name='exam_type_export'),
 
 ]

@@ -1,7 +1,7 @@
 from django import forms
 from django.utils import timezone
 from .models import Report
-from masterdata.models import Referrer, Sonologist, ExamName
+from masterdata.models import Referrer, Sonologist, ExamName, ExamType
 
 
 class ReportForm(forms.ModelForm):
@@ -80,11 +80,13 @@ class ReportFilterForm(forms.Form):
         empty_label="All Sonologists",
         widget=forms.Select(attrs={'class': 'form-select'})
     )
-    exam_type = forms.ChoiceField(
+    exam_type = forms.ModelChoiceField(
         required=False,
-        choices=[('', 'All Exam Types')] + Report.EXAM_TYPE_CHOICES,
+        queryset=ExamType.active.all(),
+        empty_label="All Exam Types",
         widget=forms.Select(attrs={'class': 'form-select'})
     )
+
     exam_name = forms.ModelChoiceField(
         required=False,
         queryset=ExamName.active.all(),
@@ -129,6 +131,16 @@ class DailyReportFilterForm(forms.Form):
         widget=forms.Select(attrs={'class': 'form-select'})
     )
 
+
+class ExamTypeReportFilterForm(forms.Form):
+    start_date = forms.DateField(required=False, widget=forms.DateInput(attrs={'type':'date'}))
+    end_date = forms.DateField(required=False, widget=forms.DateInput(attrs={'type':'date'}))
+    sonologist = forms.ModelChoiceField(
+        queryset=Sonologist.active.all(), required=False, empty_label="All"
+    )
+    exam_type = forms.ModelChoiceField(
+        queryset=ExamType.active.all(), required=False, empty_label="All"
+    )
 
 class MonthlyReportFilterForm(forms.Form):
     start_date = forms.DateField(

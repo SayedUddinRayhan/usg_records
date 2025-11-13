@@ -1,4 +1,5 @@
 from django.db import models
+from masterdata.models import ExamType
 
 class Report(models.Model):
     id_number = models.CharField(max_length=100, blank=True, null=True)
@@ -12,12 +13,13 @@ class Report(models.Model):
         related_name='reports'
     )
 
-    EXAM_TYPE_CHOICES = [
-        ('Normal', 'Normal'),
-        ('Special', 'Special'),
-    ]
-   
-    exam_type = models.CharField(max_length=50, choices=EXAM_TYPE_CHOICES, default='Normal')
+    exam_type = models.ForeignKey( 
+        ExamType,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='reports'
+    )
 
     def get_self_referrer():
         from masterdata.models import Referrer
