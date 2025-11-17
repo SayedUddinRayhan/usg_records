@@ -133,8 +133,25 @@ class DailyReportFilterForm(forms.Form):
 
 
 class ExamTypeReportFilterForm(forms.Form):
-    start_date = forms.DateField(required=False, widget=forms.DateInput(attrs={'type':'date'}))
-    end_date = forms.DateField(required=False, widget=forms.DateInput(attrs={'type':'date'}))
+    start_date = forms.DateField(
+        required=False, 
+        input_formats=['%d/%m/%Y'], 
+        widget=forms.TextInput(attrs={
+            'type': 'text',
+            'class': 'form-control date-picker',
+            'placeholder': 'DD/MM/YYYY'
+        })
+    )
+    end_date = forms.DateField(
+        required=False, 
+        input_formats=['%d/%m/%Y'], 
+        widget=forms.TextInput(attrs={
+            'type': 'text',
+            'class': 'form-control date-picker',
+            'placeholder': 'DD/MM/YYYY'
+        })
+        
+    )
     sonologist = forms.ModelChoiceField(
         queryset=Sonologist.active.all(), required=False, empty_label="All"
     )

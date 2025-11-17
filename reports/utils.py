@@ -58,3 +58,20 @@ def export_to_pdf(rows, headers, filename, extra_context=None):
         return HttpResponse("Error generating PDF", status=500)
     return response
 
+def export_pdf_grouped(grouped_data, headers, filename, extra_context=None):
+    template = get_template("reports/exam_type_report_pdf.html")
+    context = {"grouped_data": grouped_data, "headers": headers}
+
+    if extra_context:
+        context.update(extra_context)
+
+    html = template.render(context)
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'inline; filename="{filename}.pdf"'
+
+    pisa_status = pisa.CreatePDF(html, dest=response)
+    if pisa_status.err:
+        return HttpResponse("Error generating PDF", status=500)
+    return response
+
+

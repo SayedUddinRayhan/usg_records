@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: DejaVu Sans; font-size: 14px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+        th, td { border: 1px solid #444; padding: 5px; }
+        th { background: #f0f0f0; }
+        .sonologist-header { background: #d9edf7; font-weight: bold; }
+        .total-row { background: #f9f9f9; font-weight: bold; }
+        .grand-total { background: #ffeeba; font-weight: bold; font-size: 14px; }
+    </style>
+</head>
+
+<body>
+
+    <h1 style="text-align:center;">Department of Radiology & Imaging</h1>
+    <h3 style="text-align:center;">Ultrasonography Unit</h3>
+    <h2 style="text-align:center;">Exam Type Wise USG Report</h2>
+
+    <p><strong>{{ filter_range_text }}</strong></p>
+
+    {% for sname, data in grouped_data.items %}
+        <table>
+            <tr class="sonologist-header">
+                <td colspan="3">Sonologist: {{ sname }}</td>
+            </tr>
+            <tr>
+                <th>Exam Type</th>
+                <th>Total USG</th>
+            </tr>
+
+            {% for exam in data.exams %}
+            <tr>
+                <td>{{ exam.exam_type }}</td>
+                <td>{{ exam.total_usg }}</td>
+            </tr>
+            {% endfor %}
+
+            <tr class="total-row">
+                <td>Total for {{ sname }}</td>
+                <td>{{ data.total_usg }}</td>
+            </tr>
+        </table>
+    {% endfor %}
+
+    <table>
+        <tr class="grand-total">
+            <td>Grand Total</td>
+            <td>{{ grand_total_usg }}</td>
+        </tr>
+    </table>
+
+</body>
+</html>

@@ -12,7 +12,7 @@ from xhtml2pdf import pisa
 from django.contrib import messages
 from .models import Report
 from .forms import ReportForm, ReportFilterForm, DailyReportFilterForm, MonthlyReportFilterForm, ExamTypeReportFilterForm
-from .utils import export_to_excel, export_to_pdf
+from .utils import export_to_excel, export_to_pdf, export_pdf_grouped
 from django.db.models import Sum, F
 from datetime import date
 from django.utils.timezone import localtime, now
@@ -57,7 +57,7 @@ class DashboardDataView(View):
         category_summary = list(
             Report.objects
             .filter(date=today)
-            .values('exam_type')
+            .values('exam_type__name')
             .annotate(
                 report_count=Count('id'),
                 ultra_sum=Sum('total_ultra')
@@ -159,47 +159,82 @@ class DailyReportView(View):
         })
 
 
+
+
 class ExamTypeReportView(View):
-    """Show report of total ultras per sonologist per exam type with filtering and pagination."""
 
     def get(self, request):
+        today = date.today()
+
         form = ExamTypeReportFilterForm(request.GET or None)
 
-        reports = Report.objects.select_related('sonologist').all()
+        qs = Report.objects.select_related('sonologist', 'exam_type').all()
 
+        # Default dates
+        start_date = today
+        end_date = today
+
+        # When form receives GET
         if form.is_valid():
-            start_date = form.cleaned_data.get('start_date')
-            end_date = form.cleaned_data.get('end_date')
-            sonologist = form.cleaned_data.get('sonologist')
-            exam_type = form.cleaned_data.get('exam_type')
+            start_date = form.cleaned_data.get("start_date") or today
+            end_date = form.cleaned_data.get("end_date") or today
 
-            if start_date:
-                reports = reports.filter(date__gte=start_date)
-            if end_date:
-                reports = reports.filter(date__lte=end_date)
+            qs = qs.filter(date__gte=start_date, date__lte=end_date)
+
+            sonologist = form.cleaned_data.get("sonologist")
+            exam_type = form.cleaned_data.get("exam_type")
+
             if sonologist:
-                reports = reports.filter(sonologist=sonologist)
+                qs = qs.filter(sonologist=sonologist)
             if exam_type:
-                reports = reports.filter(exam_type=exam_type)
+                qs = qs.filter(exam_type=exam_type)
 
-        # Aggregate data: total ultras grouped by sonologist & exam_type
-        aggregated_reports = reports.values(
-            'sonologist__name', 'exam_type__name'
-        ).annotate(
-            total_ultras=Sum('total_ultra')
-        ).order_by('sonologist__name', 'exam_type__name')
+        # Aggregate by sonologist + exam type
+        raw = (
+            qs.values("sonologist__name", "exam_type__name")
+              .annotate(total_usg=Sum("total_ultra"))
+              .order_by("sonologist__name", "exam_type__name")
+        )
 
-        # Pagination
-        paginator = Paginator(aggregated_reports, 20)  # 20 rows per page
-        page_number = request.GET.get('page')
+        # Group by sonologist
+        grouped_reports = {}
+        for r in raw:
+            sname = r["sonologist__name"] or "Unknown"
+            if sname not in grouped_reports:
+                grouped_reports[sname] = {
+                    "exams": [],
+                    "total_usg": 0
+                }
+
+            grouped_reports[sname]["exams"].append({
+                "exam_type": r["exam_type__name"] or "Unknown",
+                "total_usg": r["total_usg"]
+            })
+
+            grouped_reports[sname]["total_usg"] += r["total_usg"]
+
+        grand_total_usg = sum(v["total_usg"] for v in grouped_reports.values())
+
+        # --- Pagination of sonologists ---
+        sonologist_list = list(grouped_reports.items())
+        paginator = Paginator(sonologist_list, 10)  # 10 sonologists per page
+        page_number = request.GET.get("page")
         page_obj = paginator.get_page(page_number)
 
-        context = {
-            'form': form,
-            'exam_type_reports': page_obj,  # template expects this
-        }
+        return render(request, "reports/exam_type_report.html", {
+            "form": form,
+            "grouped_reports": page_obj,   # pass page_obj instead of full dict
+            "grand_total_usg": grand_total_usg,
+            "page_obj": page_obj,
+            "start_date": start_date,
+            "end_date": end_date,
+        })
 
-        return render(request, 'reports/exam_type_report.html', context)
+
+
+
+
+
 
 
 # Monthly Report (Grouped by Sonologist)
@@ -356,51 +391,105 @@ class ExamTypeReportExportView(View):
     """Export exam-type-wise USG report by sonologist (Excel / PDF)."""
 
     def get(self, request, fmt):
+        today = date.today()
         form = ExamTypeReportFilterForm(request.GET or None)
-        qs = Report.objects.all()
+
+        # Default date range
+        sd = today
+        ed = today
+        sonologist = None
+        exam_type = None
 
         if form.is_valid():
-            sd = form.cleaned_data.get("start_date")
-            ed = form.cleaned_data.get("end_date")
+            sd = form.cleaned_data.get("start_date") or today
+            ed = form.cleaned_data.get("end_date") or today
             sonologist = form.cleaned_data.get("sonologist")
             exam_type = form.cleaned_data.get("exam_type")
 
-            if sd:
-                qs = qs.filter(date__gte=sd)
-            if ed:
-                qs = qs.filter(date__lte=ed)
-            if sonologist:
-                qs = qs.filter(sonologist=sonologist)
-            if exam_type:
-                qs = qs.filter(exam_type=exam_type)
+        # Text for header
+        filter_range_text = f"Showing data from {sd.strftime('%d-%m-%Y')} to {ed.strftime('%d-%m-%Y')}"
 
-        # Prepare data grouped by exam_type and sonologist
-        report_data = (
-            qs.values('exam_type', 'sonologist')
-              .annotate(
-                  sonologist_name=F('sonologist__name'),
-                  exam_type_name=F('exam_type__name'),
-                  total_usg=Sum('total_ultra')
-              )
-              .order_by('exam_type', 'sonologist')
+        # Base queryset
+        qs = Report.objects.select_related("sonologist", "exam_type").filter(
+            date__gte=sd,
+            date__lte=ed
         )
 
-        headers = ['Exam Type', 'Sonologist', 'Total USG']
-        rows = [
-            [r['exam_type_name'], r['sonologist_name'], r['total_usg']]
-            for r in report_data
-        ]
+        # Optional filters
+        if sonologist:
+            qs = qs.filter(sonologist=sonologist)
+        if exam_type:
+            qs = qs.filter(exam_type=exam_type)
 
-        grand_total_usg = sum(r['total_usg'] for r in report_data)
+        # Aggregate totals
+        db_rows = (
+            qs.values("sonologist", "exam_type")
+              .annotate(
+                  sonologist_name=F("sonologist__name"),
+                  exam_type_name=F("exam_type__name"),
+                  total_usg=Sum("total_ultra"),
+              )
+              .order_by("sonologist__name", "exam_type__name")
+        )
 
-        if fmt.lower() == 'xlsx':
-            return export_to_excel(rows, headers, "exam_type_report")
-        elif fmt.lower() == 'pdf':
-            return export_to_pdf(rows, headers, "exam_type_report", extra_context={
-                'grand_total_usg': grand_total_usg,
-                'group_by': 'exam_type_sonologist'
+        # Grouping
+        grouped_data = {}
+        for r in db_rows:
+            sname = r["sonologist_name"] or "Unknown"
+
+            if sname not in grouped_data:
+                grouped_data[sname] = {
+                    "exams": [],
+                    "total_usg": 0,
+                }
+
+            grouped_data[sname]["exams"].append({
+                "exam_type": r["exam_type_name"] or "Unknown",
+                "total_usg": r["total_usg"],
             })
+
+            grouped_data[sname]["total_usg"] += r["total_usg"]
+
+        # Prepare export rows
+        rows = []
+        for sname, data in grouped_data.items():
+            first = True
+            for exam in data["exams"]:
+                rows.append([
+                    sname if first else "",
+                    exam["exam_type"],
+                    exam["total_usg"],
+                ])
+                first = False
+
+            # Total under each sonologist
+            rows.append(["", "Total USG:", data["total_usg"]])
+
+        # Grand total
+        grand_total_usg = sum(d["total_usg"] for d in grouped_data.values())
+        rows.append(["", "Grand Total USG:", grand_total_usg])
+
+        headers = ["Sonologist", "Exam Type", "Total USG"]
+
+        # Export Excel
+        if fmt.lower() == "xlsx":
+            return export_to_excel(rows, headers, "exam_type_report")
+
+        # Export PDF
+        if fmt.lower() == "pdf":
+            return export_pdf_grouped(
+                grouped_data,
+                headers,
+                "exam_type_report",
+                extra_context={
+                    "grand_total_usg": grand_total_usg,
+                    "filter_range_text": filter_range_text,
+                },
+            )
+
         return HttpResponse("Invalid format", status=400)
+
+
 
 
 #  Monthly Export (Excel / PDF)
