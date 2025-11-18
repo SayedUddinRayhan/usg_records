@@ -202,9 +202,66 @@
       background-color: rgba(255, 255, 255, 0.3);
       border-radius: 3px;
     }
+
+    .custom-toast {
+        opacity: 0;
+        transform: translateX(20px);
+        transition: opacity 0.4s ease, transform 0.4s ease;
+    }
+
+    .custom-toast.show {
+        opacity: 1;
+        transform: translateX(0);
+    }
+
+    .hide-toast {
+        opacity: 0 !important;
+        transform: translateX(20px) !important;
+    }
+
   </style>
 </head>
 <body>
+
+<!-- Toast Notification Container -->
+<div class="position-fixed top-0 end-0 p-3" style="z-index: 2000;">
+    <div id="toastContainer"></div>
+</div>
+
+{% if messages %}
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const container = document.getElementById("toastContainer");
+
+        {% for message in messages %}
+            const toast = document.createElement("div");
+            toast.className = "toast align-items-center text-bg-{{ message.tags }} border-0 show custom-toast";
+            toast.setAttribute("role", "alert");
+            toast.setAttribute("aria-live", "assertive");
+            toast.setAttribute("aria-atomic", "true");
+
+            toast.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body fw-semibold">
+                        {{ message|escapejs }}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto"
+                        data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            `;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.remove("show");
+                toast.classList.add("hide-toast");
+                setTimeout(() => toast.remove(), 600);
+            }, 3500); // Auto fade-out after 3.5 sec
+        {% endfor %}
+    });
+</script>
+{% endif %}
+
 
 <!-- Navbar -->
 <nav class="navbar navbar-expand-lg navbar-dark fixed-top px-3">
@@ -340,4 +397,5 @@
 </script>
 
 </body>
+
 </html>

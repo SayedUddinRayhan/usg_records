@@ -1,6 +1,7 @@
 from django.urls import path
 from .views import (
     HomeView,
+    ReportEditView,
     DashboardPageView,
     DashboardDataView,
     ReportListView,
@@ -17,6 +18,7 @@ app_name = "reports"
 
 urlpatterns = [
     path('', HomeView.as_view(), name='home'),
+    path('edit/<int:pk>/', ReportEditView.as_view(), name='report_edit'),
     path('dashboard/', DashboardPageView.as_view(), name='dashboard'),
     path('dashboard/data/', DashboardDataView.as_view(), name='dashboard-data'),
     path('reports/', ReportListView.as_view(), name='report_list'),

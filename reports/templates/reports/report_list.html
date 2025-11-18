@@ -10,12 +10,17 @@
     <div class="col-md-2">{{ form.end_date.label_tag }} {{ form.end_date }}</div>
     <div class="col-md-2">{{ form.exam_name.label_tag }} {{ form.exam_name }}</div>
     <div class="col-md-2">{{ form.exam_type.label_tag }} {{ form.exam_type }}</div>
-    <div class="col-md-3">{{ form.referred_by.label_tag }} {{ form.referred_by }}</div>
-    <div class="col-md-3">{{ form.sonologist.label_tag }} {{ form.sonologist }}</div>
-    {% comment %} <div class="col-md-2">{{ form.group_by.label_tag }} {{ form.group_by }}</div> {% endcomment %}
+    <div class="col-md-2">{{ form.referred_by.label_tag }} {{ form.referred_by }}</div>
+    <div class="col-md-2">{{ form.sonologist.label_tag }} {{ form.sonologist }}</div>
+    <!-- Search Input -->
+    <div class="col-md-2">
+      <input type="text" name="search" id="search" class="form-control" 
+             value="{{ request.GET.search }}" placeholder="Search">
+    </div>
+
     <div class="col-md-12">
       <button type="submit" class="btn btn-primary mt-2">Filter</button>
-      <a href="{% url 'reports:export' 'xlsx' %}?{{ request.GET.urlencode }}" class="btn btn-success mt-2">⬇ Export Excel</a>
+      <a href="{% url 'reports:export' 'xlsx' %}?{{ request.GET.urlencode }}" class="btn btn-success mt-2">⬇ Excel</a>
       {% comment %} <a href="{% url 'reports:export' 'pdf' %}?{{ request.GET.urlencode }}" class="btn btn-danger mt-2">⬇ Export PDF</a> {% endcomment %}
     </div>
   </form>
@@ -26,28 +31,46 @@
 <table class="table table-bordered">
   <thead class="table-light">
     <tr>
-      <th>ID</th>
+      <th>Patient ID</th>
       <th>Date</th>
       <th>Exam Name</th>
       <th>Exam Type</th>
       <th>Referred By</th>
       <th>Sonologist</th>
       <th>Total Ultra</th>
+      <th>Actions</th>
     </tr>
   </thead>
   <tbody>
     {% for r in reports %}
       <tr>
-        <td>{{ r.id_number }}</td>
+        <td>{{ r.id_number|default:"—" }}</td>
         <td>{{ r.date|date:"d M Y" }}</td>
-        <td>{{ r.exam_name }}</td>
-        <td>{{ r.exam_type }}</td>
-        <td>{{ r.referred_by }}</td>
-        <td>{{ r.sonologist }}</td>
+
+        <td>
+          {% if r.exam_name %}{{ r.exam_name.name }}{% else %}—{% endif %}
+        </td>
+
+        <td>
+          {% if r.exam_type %}{{ r.exam_type.name }}{% else %}—{% endif %}
+        </td>
+
+        <td>
+          {% if r.referred_by %}{{ r.referred_by.name }}{% else %}—{% endif %}
+        </td>
+
+        <td>
+          {% if r.sonologist %}{{ r.sonologist.name }}{% else %}—{% endif %}
+        </td>
+
         <td>{{ r.total_ultra }}</td>
+
+        <td>
+          <a href="{% url 'reports:report_edit' r.id %}" class="btn btn-sm btn-warning">Edit</a>
+        </td>
       </tr>
     {% empty %}
-      <tr><td colspan="7">No records found</td></tr>
+      <tr><td colspan="8">No records found</td></tr>
     {% endfor %}
   </tbody>
 </table>
@@ -88,7 +111,5 @@
     </ul>
   </nav>
 {% endif %}
-
-
 
 {% endblock %}

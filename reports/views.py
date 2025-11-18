@@ -13,10 +13,12 @@ from django.contrib import messages
 from .models import Report
 from .forms import ReportForm, ReportFilterForm, DailyReportFilterForm, MonthlyReportFilterForm, ExamTypeReportFilterForm
 from .utils import export_to_excel, export_to_pdf, export_pdf_grouped
-from django.db.models import Sum, F
+from django.db.models import Sum, F, Q
 from datetime import date
 from django.utils.timezone import localtime, now
 from django.http import JsonResponse
+from django.views.generic import UpdateView
+from django.urls import reverse_lazy
 
 # Home / Add New Report
 class HomeView(View):
@@ -93,7 +95,9 @@ class ReportListView(View):
     def get(self, request):
         form = ReportFilterForm(request.GET or None)
         qs = Report.objects.all().order_by('-date')
+        applied_filters = []
 
+        # Apply filters from form
         if form.is_valid():
             sd = form.cleaned_data.get("start_date")
             ed = form.cleaned_data.get("end_date")
@@ -102,18 +106,65 @@ class ReportListView(View):
             exam_type = form.cleaned_data.get("exam_type")
             exam_name = form.cleaned_data.get("exam_name")
 
-            if sd: qs = qs.filter(date__gte=sd)
-            if ed: qs = qs.filter(date__lte=ed)
-            if referred_by: qs = qs.filter(referred_by=referred_by)
-            if sonologist: qs = qs.filter(sonologist=sonologist)
-            if exam_type: qs = qs.filter(exam_type__icontains=exam_type)
-            if exam_name: qs = qs.filter(exam_name=exam_name)
+            if sd:
+                qs = qs.filter(date__gte=sd)
+                applied_filters.append(f"Start Date: {sd.strftime('%d-%m-%Y')}")
+            if ed:
+                qs = qs.filter(date__lte=ed)
+                applied_filters.append(f"End Date: {ed.strftime('%d-%m-%Y')}")
+            if referred_by:
+                qs = qs.filter(referred_by=referred_by)
+                applied_filters.append(f"Doctor: {referred_by}")
+            if sonologist:
+                qs = qs.filter(sonologist=sonologist)
+                applied_filters.append(f"Sonologist: {sonologist}")
+            if exam_type:
+                qs = qs.filter(exam_type=exam_type)
+                applied_filters.append(f"Exam Type: {exam_type}")
+            if exam_name:
+                qs = qs.filter(exam_name=exam_name)
+                applied_filters.append(f"Exam Name: {exam_name}")
 
+        # Search functionality
+        search_query = request.GET.get('search')
+        if search_query:
+            qs = qs.filter(
+                Q(id_number__icontains=search_query) |
+                Q(exam_name__name__icontains=search_query) |
+                Q(exam_type__name__icontains=search_query) |
+                Q(referred_by__name__icontains=search_query) |
+                Q(sonologist__name__icontains=search_query)
+            )
+            applied_filters.append(f"Search: {search_query}")
+
+        # Pagination
         paginator = Paginator(qs, 10)
         page_number = request.GET.get("page")
         reports = paginator.get_page(page_number)
 
-        return render(request, self.template_name, {"form": form, "reports": reports})
+        return render(request, self.template_name, {
+            "form": form,
+            "reports": reports,
+            "applied_filters": applied_filters
+        })
+
+
+
+
+
+# Edit
+class ReportEditView(UpdateView):
+    model = Report
+    form_class = ReportForm
+    template_name = "reports/report_edit.html"
+
+    def form_valid(self, form):
+        messages.success(self.request, "Report updated successfully!")
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse_lazy("reports:report_list")  # redirect to report list page
+    
 
 
 # Daily Report
@@ -284,17 +335,18 @@ class MonthlyReportView(View):
         })
 
 
-#  Export All Reports (Excel / PDF)
+# Export (All)
 class ExportView(View):
     def get(self, request, fmt):
         form = ReportFilterForm(request.GET or None)
-        qs = Report.objects.all().order_by('-date')
+        qs = Report.objects.select_related('exam_type', 'referred_by', 'sonologist', 'exam_name').all().order_by('-date')
         applied_filters = []
 
+        # Apply filters from form
         if form.is_valid():
             sd = form.cleaned_data.get("start_date")
             ed = form.cleaned_data.get("end_date")
-            referred_by = form.cleaned_data.get("referred_by_name")
+            referred_by = form.cleaned_data.get("referred_by")  # fixed
             sonologist = form.cleaned_data.get("sonologist")
             exam_type = form.cleaned_data.get("exam_type")
             exam_name = form.cleaned_data.get("exam_name")
@@ -307,39 +359,48 @@ class ExportView(View):
                 applied_filters.append(f"End Date: {ed.strftime('%d-%m-%Y')}")
             if referred_by:
                 qs = qs.filter(referred_by=referred_by)
-                applied_filters.append(f"Doctor: {referred_by}")
+                applied_filters.append(f"Doctor: {referred_by.name}")
             if sonologist:
                 qs = qs.filter(sonologist=sonologist)
-                applied_filters.append(f"Sonologist: {sonologist}")
+                applied_filters.append(f"Sonologist: {sonologist.name}")
             if exam_type:
                 qs = qs.filter(exam_type=exam_type)
-                applied_filters.append(f"Exam Type: {exam_type}")
+                applied_filters.append(f"Exam Type: {exam_type.name}")
             if exam_name:
-                qs = qs.filter(exam_name__icontains=exam_name)
-                applied_filters.append(f"Exam Name: {exam_name}")
+                qs = qs.filter(exam_name=exam_name)  # filter by object equality
+                applied_filters.append(f"Exam Name: {exam_name.name}")
 
-        # Annotate names for export
-        qs = qs.annotate(
-            referred_by_name=F('referred_by__name'),
-            sonologist_name=F('sonologist__name')
-        )
+        # Search functionality
+        search_query = request.GET.get('search')
+        if search_query:
+            qs = qs.filter(
+                Q(id_number__icontains=search_query) |
+                Q(exam_name__name__icontains=search_query) |
+                Q(exam_type__name__icontains=search_query) |
+                Q(referred_by__name__icontains=search_query) |
+                Q(sonologist__name__icontains=search_query)
+            )
+            applied_filters.append(f"Search: {search_query}")
 
-        headers = ['Date', 'Referred By', 'Sonologist', 'Exam Type', 'Exam Name', 'Total USG']
+        # Prepare headers and rows
+        headers = ['Patient ID', 'Date', 'Referred By', 'Sonologist', 'Exam Type', 'Exam Name', 'Total USG']
         rows = [
             [
+                r.id_number or "—",
                 r.date.strftime("%d-%m-%Y"),
-                getattr(r, 'referred_by_name', r.referred_by),
-                getattr(r, 'sonologist_name', r.sonologist),
-                r.exam_type,
-                r.exam_name,
+                r.referred_by.name if r.referred_by else "—",
+                r.sonologist.name if r.sonologist else "—",
+                r.exam_type.name if r.exam_type else "—",
+                r.exam_name.name if r.exam_name else "—",
                 r.total_ultra
             ]
             for r in qs
         ]
 
         grand_total_usg = qs.aggregate(total=Sum('total_ultra'))['total'] or 0
-        rows.append(['', '', '', '', 'Grand Total', grand_total_usg])
+        rows.append(['', '', '', '', '', 'Grand Total', grand_total_usg])
 
+        # Export to Excel or PDF
         if fmt.lower() == 'xlsx':
             return export_to_excel(rows, headers, "all_reports")
         elif fmt.lower() == 'pdf':
@@ -347,7 +408,10 @@ class ExportView(View):
                 "grand_total_usg": grand_total_usg,
                 "applied_filters": applied_filters
             })
+
         return HttpResponse("Invalid format", status=400)
+
+
 
 
 #  Daily Export (Excel / PDF)

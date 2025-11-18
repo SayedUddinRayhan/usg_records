@@ -3,16 +3,21 @@ from django.utils import timezone
 from .models import Report
 from masterdata.models import Referrer, Sonologist, ExamName, ExamType
 
+INPUT_CLASS = 'form-control'
 
 class ReportForm(forms.ModelForm):
+    # use DateInput with explicit format and keep input_formats for parsing
     date = forms.DateField(
-        initial=timezone.now().strftime('%d/%m/%Y'),
+        required=True,
         input_formats=['%d/%m/%Y'],
-        widget=forms.TextInput(attrs={
-            'type': 'text',
-            'class': 'form-control date-picker',
-            'placeholder': 'DD/MM/YYYY',
-        })
+        widget=forms.DateInput(
+            format='%d/%m/%Y',
+            attrs={
+                'type': 'text',                      # keep as text so your JS date-picker (if any) works
+                'class': 'form-control date-picker',
+                'placeholder': 'DD/MM/YYYY',
+            }
+        )
     )
 
     class Meta:
@@ -28,7 +33,7 @@ class ReportForm(forms.ModelForm):
             'notes'
         ]
         widgets = {
-            'id_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Patient ID'}),
+            'id_number': forms.TextInput(attrs={'class': INPUT_CLASS, 'placeholder': 'Patient ID'}),
             'exam_name': forms.Select(attrs={'class': 'form-select'}),
             'exam_type': forms.Select(attrs={'class': 'form-select'}),
             'referred_by': forms.Select(attrs={'class': 'form-select'}),
@@ -38,12 +43,28 @@ class ReportForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
+        """
+        - Format date initial when editing an instance so the text widget shows dd/mm/YYYY.
+        - Also set querysets for ModelChoiceFields as before.
+        """
         super().__init__(*args, **kwargs)
+
+        # If editing an existing instance, show date as dd/mm/YYYY in the text widget
+        instance = kwargs.get('instance')  # update view passes instance via kwargs normally
+        if instance and getattr(instance, 'date', None):
+            # set initial so the widget renders formatted string
+            self.initial['date'] = instance.date.strftime('%d/%m/%Y')
+
+        # fallback: for new forms show today's date string (optional)
+        if not self.initial.get('date'):
+            self.initial['date'] = timezone.now().strftime('%d/%m/%Y')
+
+        # model choice querysets
         self.fields['referred_by'].queryset = Referrer.active.all()
         self.fields['sonologist'].queryset = Sonologist.active.all()
         self.fields['exam_name'].queryset = ExamName.active.all()
 
-         # make mandatory fields required
+        # make mandatory fields required
         self.fields['exam_name'].required = True
         self.fields['exam_type'].required = True
         self.fields['sonologist'].required = True
