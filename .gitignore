@@ -19,6 +19,7 @@ db.sqlite3
 db_backup.sqlite3
 db_backup_new.sqlite3
 import_old_reports.py
+start_django_background.bat
 
 # Media and static files (optional if you generate locally)
 media/
